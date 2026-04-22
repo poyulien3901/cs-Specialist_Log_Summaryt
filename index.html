@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>助理日結計算報表</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', '微軟正黑體', sans-serif; background: #eef1f7; color: #1a1a2e; }
+    .container { max-width: 100%; margin: 0 auto; padding: 24px 20px; }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, #2563eb 0%, #1e40af 60%, #1e3a8a 100%);
+      color: #fff; border-radius: 14px; padding: 22px 28px;
+      margin-bottom: 28px; box-shadow: 0 6px 20px rgba(37,99,235,.3);
+      display: flex; align-items: center; gap: 16px;
+    }
+    header::before {
+      content: '📊'; font-size: 2rem; flex-shrink: 0;
+    }
+    header h1 { font-size: 1.45rem; font-weight: 800; letter-spacing: .04em; }
+    header .meta { font-size: .82rem; opacity: .75; margin-top: 5px; }
+
+    /* ── Month block ── */
+    .month-section { margin-bottom: 36px; }
+    .month-title {
+      font-size: 1.05rem; font-weight: 700; color: #2563eb;
+      border-left: 5px solid #2563eb; padding: 4px 0 4px 12px;
+      margin-bottom: 14px; background: linear-gradient(90deg,rgba(37,99,235,.07) 0%,transparent 100%);
+      border-radius: 0 6px 6px 0;
+    }
+
+    /* ── Table ── */
+    .table-wrap { border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,.09); overflow-x: auto; }
+    table { border-collapse: collapse; white-space: nowrap; }
+
+    /* header row */
+    thead th {
+      padding: 10px 16px; text-align: center;
+      font-size: .8rem; font-weight: 700; color: #fff;
+      background: #2563eb; border: 1px solid #1d4ed8;
+    }
+    thead th.col-name { text-align: left; background: #1e40af; }
+    thead th.col-avg  { background: #0ea5e9; border-color: #0284c7; }
+    thead th.col-low  { background: #f59e0b; border-color: #d97706; color: #fff; }
+    thead th .weekday { font-weight: 400; font-size: .74rem; opacity: .85; }
+    thead th .weekday.sat { color: #bae6fd; }
+    thead th .weekday.sun { color: #fca5a5; }
+
+    /* body cells */
+    td { padding: 7px 16px; font-size: .87rem; border: 1px solid #e2e8f0; text-align: right; background: #fff; }
+    tr:nth-child(4n+1) td, tr:nth-child(4n+2) td { background: #f8faff; }
+    tr.person-first td { border-top: 2px solid #93c5fd; }
+
+    td.cell-label { text-align: left; color: #64748b; font-size: .81rem; padding-left: 22px; background: #f8faff !important; }
+    td.cell-name  { font-weight: 700; color: #1e40af; vertical-align: middle; background: #eff6ff !important; min-width: 90px; }
+
+    /* 月均 */
+    td.cell-avg   { background: #e0f2fe !important; color: #0369a1; font-weight: 700; border-left: 2px solid #7dd3fc; border-right: 2px solid #7dd3fc; }
+    thead th.col-avg { border-left: 2px solid #38bdf8; border-right: 2px solid #38bdf8; }
+
+    /* 未達 */
+    td.cell-low   { background: #fffbeb !important; border-right: 2px solid #fcd34d; text-align: center; }
+    td.cell-low span.low-cnt { color: #b45309; font-weight: 800; font-size: .95rem; }
+    td.cell-low span.low-sep { color: #d1d5db; margin: 0 1px; }
+    td.cell-low span.low-tot { color: #6b7280; font-weight: 600; font-size: .88rem; }
+    td.cell-low span.low-pct { color: #b45309; font-size: .78rem; font-weight: 500; }
+    thead th.col-low { border-left: 2px solid #fbbf24; border-right: 2px solid #fbbf24; }
+
+    /* KPI 標色 */
+    td.kpi-low { background: #fef3c7 !important; color: #92400e; font-weight: 700; }
+
+    /* 月均 KPI 低標 */
+    td.cell-avg.kpi-low { background: #fde68a !important; color: #92400e; border-left: 2px solid #f59e0b; border-right: 2px solid #f59e0b; }
+
+    .no-data { text-align: center; padding: 60px 20px; color: #94a3b8; font-size: .95rem; }
+    .no-data code { background: #f1f5f9; padding: 2px 7px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>助理工作日結計算報表</h1>
+    <div class="meta" id="gen-time">載入中…</div>
+  </header>
+  <div id="content"></div>
+</div>
+<script src="daily_data.js"></script>
+<script>
+(function () {
+  var content = document.getElementById('content');
+  var genEl   = document.getElementById('gen-time');
+  if (typeof DAILY_DATA === 'undefined' || !Array.isArray(DAILY_DATA)) {
+    content.innerHTML = '<div class="no-data"><p>找不到資料，請先執行 PowerShell 腳本產生 <code>daily_data.js</code>，再重新開啟此頁面。</p></div>';
+    genEl.textContent = '尚無資料';
+    return;
+  }
+  genEl.textContent = '資料更新時間：' + (typeof DAILY_META !== 'undefined' && DAILY_META.generatedAt ? DAILY_META.generatedAt : '未知');
+  function parseMD(s) { var p = s.split('月'); return parseInt(p[0],10)*100 + parseInt(p[1],10); }
+  var WD = ['日','一','二','三','四','五','六'];
+  var WC = ['sun','','','','','','sat'];
+  function weekdaySpan(ds) {
+    var p=ds.split('月'), dt=new Date(2026, parseInt(p[0],10)-1, parseInt(p[1],10)), w=dt.getDay();
+    return '<span class="weekday'+(WC[w]?' '+WC[w]:'')+'">週'+WD[w]+'</span>';
+  }
+  function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  var NAME_PRI = ['Yayuan Chang','Maggy Chen','Sandy Wu'];
+  function namePri(nm) { var i=NAME_PRI.indexOf(nm); return i===-1?999:i; }
+  var monthMap={}, monthOrder=[];
+  DAILY_DATA.forEach(function(r){ var mo=r.date.split('月')[0]+'月'; if(!monthMap[mo]){monthMap[mo]=[];monthOrder.push(mo);} monthMap[mo].push(r); });
+  monthOrder.sort(function(a,b){ return parseInt(b,10)-parseInt(a,10); });
+  var html='';
+  monthOrder.forEach(function(mo){
+    var rows=monthMap[mo];
+    var dateSet={}, dateOrder=[];
+    rows.forEach(function(r){ if(!dateSet[r.date]){dateSet[r.date]=true;dateOrder.push(r.date);} });
+    dateOrder.sort(function(a,b){ return parseMD(a)-parseMD(b); });
+    var nameSet={}, nameOrder=[];
+    rows.forEach(function(r){ if(!nameSet[r.name]){nameSet[r.name]=true;nameOrder.push(r.name);} });
+    nameOrder.sort(function(a,b){ var pa=namePri(a),pb=namePri(b); return pa!==pb?pa-pb:a.localeCompare(b,'en'); });
+    var pivot={};
+    rows.forEach(function(r){ if(!pivot[r.name])pivot[r.name]={}; pivot[r.name][r.date]={total:r.total,kpi:r.kpi}; });
+    html+='<div class="month-section">';
+    html+='<div class="month-title">2026年'+mo+'</div>';
+    html+='<div class="table-wrap"><table>';
+    html+='<thead><tr><th class="col-name">姓名</th><th>項目</th><th class="col-avg">月均</th><th class="col-low">未達</th>';
+    dateOrder.forEach(function(d){ html+='<th>'+esc(d)+'<br>'+weekdaySpan(d)+'</th>'; });
+    html+='</tr></thead><tbody>';
+    nameOrder.forEach(function(nm){
+      var pData=pivot[nm]||{};
+      var days=0, sumT=0, lowDays=0;
+      dateOrder.forEach(function(d){ if(pData[d]){days++;sumT+=pData[d].total;if(pData[d].kpi<0.9)lowDays++;} });
+      var avgT=days>0?sumT/days:0, avgK=avgT/408;
+      var lowPct = days>0 ? (lowDays/days*100).toFixed(2)+'%' : '';
+      var lowCell='<td class="cell-low" rowspan="2"><span class="low-cnt">'+lowDays+'</span><span class="low-sep">/</span><span class="low-tot">'+days+'</span><br><span class="low-pct">'+lowPct+'</span></td>';
+      html+='<tr class="person-first">'+
+        '<td class="cell-name" rowspan="2">'+esc(nm)+'</td>'+
+        '<td class="cell-label">加總分鐘</td>'+
+        '<td class="cell-avg">'+(days>0?avgT.toFixed(2):'')+  '</td>'+
+        lowCell;
+      dateOrder.forEach(function(d){ var v=pData[d]; html+='<td>'+(v?v.total.toFixed(2):'' )+'</td>'; });
+      html+='</tr>';
+      var ac=(days>0&&avgK<0.9)?'cell-avg kpi-low':'cell-avg';
+      html+='<tr><td class="cell-label">KPI</td>'+
+        '<td class="'+ac+'">'+(days>0?(avgK*100).toFixed(2)+'%':'')+  '</td>';
+      dateOrder.forEach(function(d){
+        var v=pData[d];
+        if(!v){html+='<td></td>';return;}
+        html+='<td'+(v.kpi<0.9?' class="kpi-low"':'')+'>'+( v.kpi*100).toFixed(2)+'%</td>';
+      });
+      html+='</tr>';
+    });
+    html+='</tbody></table></div></div>';
+  });
+  content.innerHTML=html||'<div class="no-data">尚無資料</div>';
+}());
+</script>
+</body>
+</html>
