@@ -1,5 +1,5 @@
 ﻿// daily_data.js - 由 計算工時.ps1 自動產生，請勿手動編輯
-var DAILY_META = { generatedAt: "2026/04/22 20:40" };
+var DAILY_META = { generatedAt: "2026/04/23 05:35" };
 var DAILY_DATA = [
   {"date":"1月2日","name":"Yayuan Chang","total":375,"kpi":0.9191},
   {"date":"1月2日","name":"Sandy Wu","total":217,"kpi":0.5319},
@@ -201,5 +201,7 @@ var DAILY_DATA = [
   {"date":"4月20日","name":"Sandy Wu","total":370,"kpi":0.9069},
   {"date":"4月21日","name":"Yayuan Chang","total":400,"kpi":0.9804},
   {"date":"4月21日","name":"Sandy Wu","total":284,"kpi":0.6961},
-  {"date":"4月21日","name":"Maggy Chen","total":252.5,"kpi":0.6189}
+  {"date":"4月21日","name":"Maggy Chen","total":252.5,"kpi":0.6189},
+  {"date":"4月22日","name":"Maggy Chen","total":287,"kpi":0.7034},
+  {"date":"4月22日","name":"Sandy Wu","total":283,"kpi":0.6936}
 ];
