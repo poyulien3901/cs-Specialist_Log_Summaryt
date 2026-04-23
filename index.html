@@ -104,12 +104,27 @@
     clientIP   = ipData.ip;
   } catch (e) { clientIP = null; }
   if (!ALLOWED_IPS.includes(clientIP)) {
-    content.innerHTML =
-      '<div class="no-data">' +
-      '<p style="font-size:1.1rem;font-weight:700;color:#dc2626;">⛔ 存取被拒絕</p>' +
-      '<p style="margin-top:10px;font-size:.88rem;">您的 IP：<code>' + (clientIP || '無法取得') + '</code> 不在允許清單內，無法檢視此報表。</p>' +
-      '</div>';
-    genEl.textContent = '無存取權限';
+    document.documentElement.innerHTML = '<!DOCTYPE html><html lang="zh-TW"><head>' +
+      '<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">' +
+      '<title>找不到網頁</title>' +
+      '<style>' +
+      'body{margin:0;padding:0;font-family:"Segoe UI",Arial,sans-serif;background:#fff;color:#202124;display:flex;align-items:center;justify-content:center;min-height:100vh;}' +
+      '.wrap{text-align:center;max-width:480px;padding:40px 20px;}' +
+      '.icon{font-size:72px;line-height:1;margin-bottom:24px;opacity:.35;}' +
+      'h1{font-size:1.6rem;font-weight:400;margin:0 0 12px;}' +
+      'p{font-size:.95rem;color:#5f6368;line-height:1.6;margin:0 0 8px;}' +
+      'code{font-size:.88rem;color:#1a73e8;background:#f1f3f4;padding:2px 6px;border-radius:4px;}' +
+      'hr{border:none;border-top:1px solid #e8eaed;margin:24px 0;}' +
+      '.btn{display:inline-block;margin-top:16px;padding:9px 22px;background:#1a73e8;color:#fff;border:none;border-radius:4px;font-size:.9rem;cursor:pointer;text-decoration:none;}' +
+      '</style></head><body>' +
+      '<div class="wrap">' +
+      '<div class="icon">🔌</div>' +
+      '<h1>找不到這個網頁</h1>' +
+      '<p>網址可能有誤，或是網頁已被移除。</p>' +
+      '<hr>' +
+      '<p style="font-size:.82rem;color:#9aa0a6;">DNS_PROBE_FINISHED_NXDOMAIN</p>' +
+      '<a class="btn" href="javascript:history.back()">返回</a>' +
+      '</div></body></html>';
     return;
   }
   /* ── IP 驗證通過 ── */
