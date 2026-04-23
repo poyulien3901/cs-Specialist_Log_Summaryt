@@ -89,9 +89,31 @@
 </div>
 <script src="daily_data.js"></script>
 <script>
-(function () {
+(async function () {
+  var ALLOWED_IPS = ['211.23.76.78'];
   var content = document.getElementById('content');
   var genEl   = document.getElementById('gen-time');
+
+  /* ── IP 白名單驗證 ── */
+  content.innerHTML = '<div class="no-data"><p>正在驗證存取權限，請稍候…</p></div>';
+  genEl.textContent = '驗證中…';
+  var clientIP = null;
+  try {
+    var ipRes  = await fetch('https://api.ipify.org?format=json');
+    var ipData = await ipRes.json();
+    clientIP   = ipData.ip;
+  } catch (e) { clientIP = null; }
+  if (!ALLOWED_IPS.includes(clientIP)) {
+    content.innerHTML =
+      '<div class="no-data">' +
+      '<p style="font-size:1.1rem;font-weight:700;color:#dc2626;">⛔ 存取被拒絕</p>' +
+      '<p style="margin-top:10px;font-size:.88rem;">您的 IP：<code>' + (clientIP || '無法取得') + '</code> 不在允許清單內，無法檢視此報表。</p>' +
+      '</div>';
+    genEl.textContent = '無存取權限';
+    return;
+  }
+  /* ── IP 驗證通過 ── */
+
   if (typeof DAILY_DATA === 'undefined' || !Array.isArray(DAILY_DATA)) {
     content.innerHTML = '<div class="no-data"><p>找不到資料，請先執行 PowerShell 腳本產生 <code>daily_data.js</code>，再重新開啟此頁面。</p></div>';
     genEl.textContent = '尚無資料';
